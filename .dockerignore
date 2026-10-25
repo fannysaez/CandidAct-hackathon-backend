@@ -1,0 +1,9 @@
+vendor
+var/cache
+var/log
+.git
+.gitignore
+.env.local
+.env.local.php
+node_modules
+*.md
