@@ -21,11 +21,12 @@ class Status
     /**
      * @var Collection<int, StatusApplication>
      */
-    #[ORM\ManyToMany(targetEntity: StatusApplication::class, mappedBy: 'status')]
+    #[ORM\OneToMany(targetEntity: StatusApplication::class, mappedBy: 'status')]
     private Collection $statusApplications;
 
     public function __construct()
     {
+        $this->application = new ArrayCollection();
         $this->statusApplications = new ArrayCollection();
     }
 
@@ -47,6 +48,30 @@ class Status
     }
 
     /**
+     * @return Collection<int, Application>
+     */
+    public function getApplication(): Collection
+    {
+        return $this->application;
+    }
+
+    public function addApplication(Application $application): static
+    {
+        if (!$this->application->contains($application)) {
+            $this->application->add($application);
+        }
+
+        return $this;
+    }
+
+    public function removeApplication(Application $application): static
+    {
+        $this->application->removeElement($application);
+
+        return $this;
+    }
+
+    /**
      * @return Collection<int, StatusApplication>
      */
     public function getStatusApplications(): Collection
@@ -58,7 +83,7 @@ class Status
     {
         if (!$this->statusApplications->contains($statusApplication)) {
             $this->statusApplications->add($statusApplication);
-            $statusApplication->addStatus($this);
+            $statusApplication->setStatus($this);
         }
 
         return $this;
@@ -67,9 +92,13 @@ class Status
     public function removeStatusApplication(StatusApplication $statusApplication): static
     {
         if ($this->statusApplications->removeElement($statusApplication)) {
-            $statusApplication->removeStatus($this);
+            // set the owning side to null (unless already changed)
+            if ($statusApplication->getStatus() === $this) {
+                $statusApplication->setStatus(null);
+            }
         }
 
         return $this;
     }
+
 }

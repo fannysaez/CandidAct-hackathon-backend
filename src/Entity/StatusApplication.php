@@ -16,87 +16,53 @@ class StatusApplication
     private ?int $id = null;
 
     #[ORM\Column]
-    private ?\DateTimeImmutable $updateDate = null;
+    private ?\DateTime $updateDate = null;
 
-    /**
-     * @var Collection<int, Status>
-     */
-    #[ORM\ManyToMany(targetEntity: Status::class, inversedBy: 'statusApplications')]
-    private Collection $status;
+    #[ORM\ManyToOne(inversedBy: 'applicationsStatus')]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?Application $application = null;
 
-    /**
-     * @var Collection<int, Application>
-     */
-    #[ORM\ManyToMany(targetEntity: Application::class, inversedBy: 'statusApplications')]
-    private Collection $application;
-
-    public function __construct()
-    {
-        $this->status = new ArrayCollection();
-        $this->application = new ArrayCollection();
-    }
+    #[ORM\ManyToOne(inversedBy: 'statusApplications')]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?Status $status = null;
 
     public function getId(): ?int
     {
         return $this->id;
     }
 
-    public function getUpdateDate(): ?\DateTimeImmutable
+    public function getUpdateDate(): ?\DateTime
     {
         return $this->updateDate;
     }
 
-    public function setUpdateDate(\DateTimeImmutable $updateDate): static
+    public function setUpdateDate(\DateTime $updateDate): static
     {
         $this->updateDate = $updateDate;
 
         return $this;
     }
 
-    /**
-     * @return Collection<int, Status>
-     */
-    public function getStatus(): Collection
-    {
-        return $this->status;
-    }
-
-    public function addStatus(Status $status): static
-    {
-        if (!$this->status->contains($status)) {
-            $this->status->add($status);
-        }
-
-        return $this;
-    }
-
-    public function removeStatus(Status $status): static
-    {
-        $this->status->removeElement($status);
-
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, Application>
-     */
-    public function getApplication(): Collection
+    public function getApplication(): ?Application
     {
         return $this->application;
     }
 
-    public function addApplication(Application $application): static
+    public function setApplication(?Application $application): static
     {
-        if (!$this->application->contains($application)) {
-            $this->application->add($application);
-        }
+        $this->application = $application;
 
         return $this;
     }
 
-    public function removeApplication(Application $application): static
+    public function getStatus(): ?Status
     {
-        $this->application->removeElement($application);
+        return $this->status;
+    }
+
+    public function setStatus(?Status $status): static
+    {
+        $this->status = $status;
 
         return $this;
     }

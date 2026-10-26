@@ -48,13 +48,13 @@ class Application
     /**
      * @var Collection<int, StatusApplication>
      */
-    #[ORM\ManyToMany(targetEntity: StatusApplication::class, mappedBy: 'application')]
-    private Collection $statusApplications;
+    #[ORM\OneToMany(targetEntity: StatusApplication::class, mappedBy: 'application')]
+    private Collection $applicationsStatus;
 
     public function __construct()
     {
         $this->reminders = new ArrayCollection();
-        $this->statusApplications = new ArrayCollection();
+        $this->applicationsStatus = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -177,29 +177,60 @@ class Application
     }
 
     /**
+     * @return Collection<int, Status>
+     */
+    public function getStatuses(): Collection
+    {
+        return $this->statuses;
+    }
+
+    public function addStatus(Status $status): static
+    {
+        if (!$this->statuses->contains($status)) {
+            $this->statuses->add($status);
+            $status->addApplication($this);
+        }
+
+        return $this;
+    }
+
+    public function removeStatus(Status $status): static
+    {
+        if ($this->statuses->removeElement($status)) {
+            $status->removeApplication($this);
+        }
+
+        return $this;
+    }
+
+    /**
      * @return Collection<int, StatusApplication>
      */
-    public function getStatusApplications(): Collection
+    public function getApplicationsStatus(): Collection
     {
-        return $this->statusApplications;
+        return $this->applicationsStatus;
     }
 
-    public function addStatusApplication(StatusApplication $statusApplication): static
+    public function addApplicationsStatus(StatusApplication $applicationsStatus): static
     {
-        if (!$this->statusApplications->contains($statusApplication)) {
-            $this->statusApplications->add($statusApplication);
-            $statusApplication->addApplication($this);
+        if (!$this->applicationsStatus->contains($applicationsStatus)) {
+            $this->applicationsStatus->add($applicationsStatus);
+            $applicationsStatus->setApplication($this);
         }
 
         return $this;
     }
 
-    public function removeStatusApplication(StatusApplication $statusApplication): static
+    public function removeApplicationsStatus(StatusApplication $applicationsStatus): static
     {
-        if ($this->statusApplications->removeElement($statusApplication)) {
-            $statusApplication->removeApplication($this);
+        if ($this->applicationsStatus->removeElement($applicationsStatus)) {
+            // set the owning side to null (unless already changed)
+            if ($applicationsStatus->getApplication() === $this) {
+                $applicationsStatus->setApplication(null);
+            }
         }
 
         return $this;
     }
+
 }
