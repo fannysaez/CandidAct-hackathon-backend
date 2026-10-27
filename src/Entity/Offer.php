@@ -2,38 +2,59 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Post;
 use App\Repository\OfferRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: OfferRepository::class)]
+#[ApiResource(
+    operations: [
+        new GetCollection(security: "is_granted('IS_AUTHENTICATED_FULLY')"),
+        new Get(security: "is_granted('IS_AUTHENTICATED_FULLY')"),
+        new Post(security: "is_granted('IS_AUTHENTICATED_FULLY')"),
+    ],
+    normalizationContext: ['groups' => ['offer:read']],
+)]
 class Offer
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['offer:read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(['offer:read'])]
     private ?string $jobTitle = null;
 
     #[ORM\Column(type: Types::TEXT)]
+    #[Groups(['offer:read'])]
     private ?string $description = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['offer:read'])]
     private ?string $contractType = null;
 
     #[ORM\Column(type: Types::DATE_MUTABLE)]
+    #[Groups(['offer:read'])]
     private ?\DateTime $publicationDate = null;
 
     #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
+    #[Groups(['offer:read'])]
     private ?\DateTime $expirationDate = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['offer:read'])]
     private ?string $url = null;
 
     #[ORM\ManyToOne(inversedBy: 'offers')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['offer:read'])]
     private ?Company $company = null;
 
     public function getId(): ?int
