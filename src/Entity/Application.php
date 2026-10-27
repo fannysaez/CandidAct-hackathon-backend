@@ -2,6 +2,10 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Doctrine\Orm\Filter\FreeTextQueryFilter;
+use ApiPlatform\Doctrine\Orm\Filter\PartialSearchFilter;
+use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\QueryParameter;
 use App\Repository\ApplicationRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -9,6 +13,17 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: ApplicationRepository::class)]
+#[ApiResource(
+    parameters: [
+        'search' => new QueryParameter(
+            filter: new FreeTextQueryFilter(
+                new PartialSearchFilter()
+            ),
+            properties: ['label', 'company.name'],
+            description: 'Recherche sur le nom de l\'entreprise ou de l\'intitulé de poste'
+        ),
+    ]
+)]
 class Application
 {
     #[ORM\Id]
@@ -171,33 +186,6 @@ class Application
             if ($reminder->getApplication() === $this) {
                 $reminder->setApplication(null);
             }
-        }
-
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, Status>
-     */
-    public function getStatuses(): Collection
-    {
-        return $this->statuses;
-    }
-
-    public function addStatus(Status $status): static
-    {
-        if (!$this->statuses->contains($status)) {
-            $this->statuses->add($status);
-            $status->addApplication($this);
-        }
-
-        return $this;
-    }
-
-    public function removeStatus(Status $status): static
-    {
-        if ($this->statuses->removeElement($status)) {
-            $status->removeApplication($this);
         }
 
         return $this;

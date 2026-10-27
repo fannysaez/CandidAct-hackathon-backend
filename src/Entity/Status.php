@@ -39,7 +39,6 @@ class Status
 
     public function __construct()
     {
-        $this->application = new ArrayCollection();
         $this->statusApplications = new ArrayCollection();
     }
 
@@ -56,30 +55,6 @@ class Status
     public function setLabel(string $label): static
     {
         $this->label = $label;
-
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, Application>
-     */
-    public function getApplication(): Collection
-    {
-        return $this->application;
-    }
-
-    public function addApplication(Application $application): static
-    {
-        if (!$this->application->contains($application)) {
-            $this->application->add($application);
-        }
-
-        return $this;
-    }
-
-    public function removeApplication(Application $application): static
-    {
-        $this->application->removeElement($application);
 
         return $this;
     }

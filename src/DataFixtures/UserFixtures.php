@@ -14,10 +14,12 @@ class UserFixtures extends Fixture
     ) {
     }
 
+    public const USER_REFERENCE = 'user';
+
     public function load(ObjectManager $manager): void
     {
-        $user = new User();
 
+        $user = new User();
         $user->setEmail('test@candidact.fr');
         $user->setFirstname('Bernard');
         $user->setLastname('Lechat');
@@ -30,7 +32,10 @@ class UserFixtures extends Fixture
 
         $user->setPassword($hashedPassword);
 
+
         $manager->persist($user);
         $manager->flush();
+
+        $this->addReference(self::USER_REFERENCE, $user);
     }
 }
