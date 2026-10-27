@@ -36,7 +36,7 @@ class ApplicationFixtures extends Fixture implements DependentFixtureInterface
             ['user-test', 'Orange', 'Paris', 'Développeur Web', 'Acceptée', 18],
             ['user-test', 'Thales', 'Toulouse', 'Développeur PHP', 'Refusée', 22],
             ['user-test', 'Airbus', 'Toulouse', 'Développeur Front', 'En attente', 27],
-            ['user-autre', 'Michelin', 'Clermont-Ferrand', 'Développeur Angular', 'Envoyée', 3],
+            ['user-autre', 'Michelin', 'Clermont-Ferrand', 'Boulanger', 'Envoyée', 3],
             ['user-autre', 'Doctolib', 'Paris', 'Développeur Back-end', 'Entretien', 9],
         ];
 
