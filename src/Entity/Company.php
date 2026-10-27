@@ -19,22 +19,22 @@ use Symfony\Component\Serializer\Attribute\Groups;
         new Get(security: "is_granted('IS_AUTHENTICATED_FULLY')"),
         new Post(security: "is_granted('IS_AUTHENTICATED_FULLY')"),
     ],
-    normalizationContext: ['groups' => ['company:read']],
+    normalizationContext: ['groups' => ['company:read', 'application:read']],
 )]
 class Company
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['company:read'])]
+    #[Groups(['company:read', 'application:read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['company:read'])]
+    #[Groups(['company:read', 'application:read'])]
     private ?string $name = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['company:read'])]
+    #[Groups(['company:read', 'application:read'])]
     private ?string $city = null;
 
     /**

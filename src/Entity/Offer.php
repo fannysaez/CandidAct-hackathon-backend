@@ -18,38 +18,38 @@ use Symfony\Component\Serializer\Attribute\Groups;
         new Get(security: "is_granted('IS_AUTHENTICATED_FULLY')"),
         new Post(security: "is_granted('IS_AUTHENTICATED_FULLY')"),
     ],
-    normalizationContext: ['groups' => ['offer:read']],
+    normalizationContext: ['groups' => ['offer:read', 'application:read']],
 )]
 class Offer
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['offer:read'])]
+    #[Groups(['offer:read', 'application:read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['offer:read'])]
+    #[Groups(['offer:read', 'application:read'])]
     private ?string $jobTitle = null;
 
     #[ORM\Column(type: Types::TEXT)]
-    #[Groups(['offer:read'])]
+    #[Groups(['offer:read', 'application:read'])]
     private ?string $description = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(['offer:read'])]
+    #[Groups(['offer:read', 'application:read'])]
     private ?string $contractType = null;
 
     #[ORM\Column(type: Types::DATE_MUTABLE)]
-    #[Groups(['offer:read'])]
+    #[Groups(['offer:read', 'application:read'])]
     private ?\DateTime $publicationDate = null;
 
     #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
-    #[Groups(['offer:read'])]
+    #[Groups(['offer:read', 'application:read'])]
     private ?\DateTime $expirationDate = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(['offer:read'])]
+    #[Groups(['offer:read', 'application:read'])]
     private ?string $url = null;
 
     #[ORM\ManyToOne(inversedBy: 'offers')]
