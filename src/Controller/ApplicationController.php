@@ -76,4 +76,60 @@ class ApplicationController extends AbstractController
             'label' => $application->getLabel(),
         ], 201);
     }
+
+    #[Route('/api/applications/{id}', name: 'app_application_show', methods: ['GET'])]
+    public function show(int $id, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $application = $entityManager->getRepository(Application::class)->find($id);
+
+        if (!$application) {
+            return new JsonResponse([
+                'error' => 'Candidature introuvable.',
+            ], 404);
+        }
+
+        // On vérifie que la candidature appartient bien à l'utilisateur connecté
+        if ($application->getUser() !== $this->getUser()) {
+            return new JsonResponse([
+                'error' => 'Candidature introuvable.',
+            ], 404);
+        }
+
+        // On cherche le statut le plus récent dans l'historique
+        $currentStatus = null;
+        foreach ($application->getApplicationsStatus() as $statusApplication) {
+            if ($currentStatus === null || $statusApplication->getUpdateDate() > $currentStatus->getUpdateDate()) {
+                $currentStatus = $statusApplication;
+            }
+        }
+
+        $data = [
+            'id' => $application->getId(),
+            'label' => $application->getLabel(),
+            'applyDate' => $application->getApplyDate()->format('Y-m-d'),
+            'description' => $application->getDescription(),
+            'company' => [
+                'name' => $application->getCompany()->getName(),
+                'city' => $application->getCompany()->getCity(),
+            ],
+            'applicationMethod' => $application->getApplicationMethod()
+                ? $application->getApplicationMethod()->getLabel()
+                : null,
+            'status' => $currentStatus ? $currentStatus->getStatus()->getLabel() : null,
+            'offer' => null,
+        ];
+
+        $offer = $application->getOffer();
+        if ($offer) {
+            $data['offer'] = [
+                'jobTitle' => $offer->getJobTitle(),
+                'contractType' => $offer->getContractType(),
+                'description' => $offer->getDescription(),
+                'publicationDate' => $offer->getPublicationDate()->format('Y-m-d'),
+                'expirationDate' => $offer->getExpirationDate() ? $offer->getExpirationDate()->format('Y-m-d') : null,
+            ];
+        }
+
+        return new JsonResponse($data, 200);
+    }
 }
