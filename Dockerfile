@@ -18,6 +18,7 @@ RUN printf '<Directory /var/www/html/public>\n\
     AllowOverride None\n\
     Require all granted\n\
     FallbackResource /index.php\n\
+    CGIPassAuth On\n\
 </Directory>\n' >> /etc/apache2/apache2.conf
 
 RUN chown -R www-data:www-data var/
