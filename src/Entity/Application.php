@@ -15,6 +15,7 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Serializer\Attribute\SerializedName;
+use ApiPlatform\Metadata\NotExposed;
 
 #[ORM\Entity(repositoryClass: ApplicationRepository::class)]
 #[ApiResource(
@@ -25,6 +26,7 @@ use Symfony\Component\Serializer\Attribute\SerializedName;
             order: ['applyDate' => 'DESC', 'id' => 'DESC'],
             paginationEnabled: false,
         ),
+        new NotExposed(uriTemplate: '/application-items/{id}'),
     ],
     normalizationContext: ['groups' => ['application:read']],
     parameters: [
