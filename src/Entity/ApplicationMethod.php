@@ -17,18 +17,18 @@ use Symfony\Component\Serializer\Attribute\Groups;
         new GetCollection(security: "is_granted('IS_AUTHENTICATED_FULLY')"),
         new Get(security: "is_granted('IS_AUTHENTICATED_FULLY')"),
     ],
-    normalizationContext: ['groups' => ['application_method:read']],
+    normalizationContext: ['groups' => ['application_method:read', 'application:read']],
 )]
 class ApplicationMethod
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['application_method:read'])]
+    #[Groups(['application_method:read', 'application:read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(['application_method:read'])]
+    #[Groups(['application_method:read', 'application:read'])]
     private ?string $label = null;
 
     /**

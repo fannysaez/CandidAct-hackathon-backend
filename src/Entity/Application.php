@@ -4,6 +4,10 @@ namespace App\Entity;
 
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Doctrine\Orm\Filter\FreeTextQueryFilter;
+use ApiPlatform\Doctrine\Orm\Filter\OrFilter;
+use ApiPlatform\Doctrine\Orm\Filter\PartialSearchFilter;
+use ApiPlatform\Metadata\QueryParameter;
 use App\Repository\ApplicationRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -22,23 +26,36 @@ use Symfony\Component\Serializer\Attribute\SerializedName;
             paginationEnabled: false,
         ),
     ],
-)]
+    normalizationContext: ['groups' => ['application:read']],
+    parameters: [
+        'search' => new QueryParameter(
+            filter: new FreeTextQueryFilter(
+                new OrFilter(
+                    new PartialSearchFilter()
+                )
+            ),
+            properties: ['offer.jobTitle', 'company.name'],
+            description: 'Recherche sur le nom de l’entreprise ou du poste'
+        ),
+    ])]
 class Application
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['application:list'])]
+    #[Groups(['application:read', 'application:list'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(['application:read'])]
     private ?string $label = null;
 
     #[ORM\Column]
-    #[Groups(['application:list'])]
+    #[Groups(['application:read', 'application:list'])]
     private ?\DateTime $applyDate = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Groups(['application:read'])]
     private ?string $description = null;
 
     #[ORM\ManyToOne(inversedBy: 'applications')]
@@ -47,18 +64,23 @@ class Application
 
     #[ORM\ManyToOne(inversedBy: 'applications')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['application:read'])]
     private ?Company $company = null;
 
     #[ORM\OneToOne(cascade: ['persist', 'remove'])]
+    #[Groups(['application:read'])]
     private ?Offer $offer = null;
 
     #[ORM\ManyToOne(inversedBy: 'applications')]
+    #[Groups(['application:read'])]
     private ?ApplicationMethod $applicationMethod = null;
 
     #[ORM\OneToMany(targetEntity: Reminder::class, mappedBy: 'application')]
+    #[Groups(['application:read'])]
     private Collection $reminders;
 
     #[ORM\OneToMany(targetEntity: StatusApplication::class, mappedBy: 'application')]
+    #[Groups(['application:read'])]
     private Collection $applicationsStatus;
 
     public function __construct()
