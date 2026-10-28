@@ -5,6 +5,8 @@ namespace App\Controller;
 use App\Entity\Application;
 use App\Entity\ApplicationMethod;
 use App\Entity\Company;
+use App\Entity\Status;
+use App\Entity\StatusApplication;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -83,12 +85,35 @@ class ApplicationController extends AbstractController
         $application->setCompany($company);
         $application->setApplicationMethod($applicationMethod);
 
+        // Recherche du statut initial "Envoyé"
+        $status = $entityManager
+            ->getRepository(Status::class)
+            ->findOneBy(['label' => 'Envoyée']);
+
+        if (!$status) {
+            return new JsonResponse([
+                'error' => 'Le statut "Envoyée" est introuvable.',
+            ], 500);
+        }
+
+        // Création de l'historique du statut
+        $statusApplication = new StatusApplication();
+        $statusApplication->setApplication($application);
+        $statusApplication->setStatus($status);
+        $statusApplication->setUpdateDate(new \DateTime());
+
+        // Enregistrement de la candidature et de son statut
         $entityManager->persist($application);
+        $entityManager->persist($statusApplication);
         $entityManager->flush();
 
         return new JsonResponse([
             'id' => $application->getId(),
             'label' => $application->getLabel(),
+            'jobTitle' => $application->getLabel(),
+            'applyDate' => $application->getApplyDate()->format('Y-m-d\TH:i:sP'),
+            'company' => $company->getName(),
+            'status' => $status->getLabel(),
         ], 201);
     }
 
