@@ -7,6 +7,7 @@ use App\Entity\ApplicationMethod;
 use App\Entity\Company;
 use App\Entity\Status;
 use App\Entity\StatusApplication;
+use App\Entity\Offer;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -65,6 +66,107 @@ class ApplicationController extends AbstractController
             ], 422);
         }
 
+        // L'offre est facultative : si elle est fournie, on la valide.
+        $offer = null;
+
+        if (array_key_exists('offer', $data)) {
+            $offerData = $data['offer'];
+
+            if (
+                !is_array($offerData)
+                || !isset(
+                $offerData['jobTitle'],
+                $offerData['description'],
+                $offerData['publicationDate']
+            )
+                || !is_string($offerData['jobTitle'])
+                || trim($offerData['jobTitle']) === ''
+                || !is_string($offerData['description'])
+                || trim($offerData['description']) === ''
+                || !is_string($offerData['publicationDate'])
+            ) {
+                return new JsonResponse([
+                    'error' => 'L’intitulé, la description et la date de publication de l’offre sont obligatoires.',
+                ], 422);
+            }
+        }
+        $publicationDateString = $offerData['publicationDate'];
+        $publicationDate = \DateTime::createFromFormat(
+            '!Y-m-d',
+            $publicationDateString
+        );
+        $dateErrors = \DateTime::getLastErrors();
+
+        if (
+            !$publicationDate
+            || $publicationDate->format('Y-m-d') !== $publicationDateString
+            || ($dateErrors !== false && (
+                $dateErrors['warning_count'] > 0
+                || $dateErrors['error_count'] > 0
+            ))
+        ) {
+            return new JsonResponse([
+                'error' => 'La date de publication est invalide.',
+            ], 422);
+        }
+
+        $expirationDate = null;
+
+        if (
+            isset($offerData['expirationDate'])
+            && $offerData['expirationDate'] !== ''
+            && $offerData['expirationDate'] !== null
+        ) {
+            if (!is_string($offerData['expirationDate'])) {
+                return new JsonResponse([
+                    'error' => 'La date d’expiration est invalide.',
+                ], 422);
+            }
+
+            $expirationDateString = $offerData['expirationDate'];
+            $expirationDate = \DateTime::createFromFormat(
+                '!Y-m-d',
+                $expirationDateString
+            );
+            $dateErrors = \DateTime::getLastErrors();
+
+            if (
+                !$expirationDate
+                || $expirationDate->format('Y-m-d') !== $expirationDateString
+                || ($dateErrors !== false && (
+                    $dateErrors['warning_count'] > 0
+                    || $dateErrors['error_count'] > 0
+                ))
+            ) {
+                return new JsonResponse([
+                    'error' => 'La date d’expiration est invalide.',
+                ], 422);
+            }
+
+            if ($expirationDate < $publicationDate) {
+                return new JsonResponse([
+                    'error' => 'La date d’expiration doit être postérieure ou égale à la date de publication.',
+                ], 422);
+            }
+        }
+
+        $offer = new Offer();
+        $offer->setJobTitle(trim($offerData['jobTitle']));
+        $offer->setDescription(trim($offerData['description']));
+        $offer->setContractType(
+            isset($offerData['contractType']) && $offerData['contractType'] !== ''
+            ? trim((string) $offerData['contractType'])
+            : null
+        );
+        $offer->setPublicationDate($publicationDate);
+        $offer->setExpirationDate($expirationDate);
+        $offer->setUrl(
+            isset($offerData['url']) && trim((string) $offerData['url']) !== ''
+            ? trim((string) $offerData['url'])
+            : null
+        );
+        $offer->setCompany($company);
+
 
         // La méthode de candidature est optionnelle
         $applicationMethod = null;
@@ -102,10 +204,31 @@ class ApplicationController extends AbstractController
         $statusApplication->setStatus($status);
         $statusApplication->setUpdateDate(new \DateTime());
 
+        if ($offer !== null) {
+            $application->setOffer($offer);
+        }
+
         // Enregistrement de la candidature et de son statut
-        $entityManager->persist($application);
-        $entityManager->persist($statusApplication);
-        $entityManager->flush();
+        $connection = $entityManager->getConnection();
+        $connection->beginTransaction();
+
+        try {
+            $entityManager->persist($application);
+            $entityManager->persist($statusApplication);
+
+            if ($offer !== null) {
+                $entityManager->persist($offer);
+            }
+
+            $entityManager->flush();
+            $connection->commit();
+        } catch (\Throwable $exception) {
+            if ($connection->isTransactionActive()) {
+                $connection->rollBack();
+            }
+
+            throw $exception;
+        }
 
         return new JsonResponse([
             'id' => $application->getId(),
@@ -114,6 +237,15 @@ class ApplicationController extends AbstractController
             'applyDate' => $application->getApplyDate()->format('Y-m-d\TH:i:sP'),
             'company' => $company->getName(),
             'status' => $status->getLabel(),
+            'offer' => $offer ? [
+                'id' => $offer->getId(),
+                'jobTitle' => $offer->getJobTitle(),
+                'contractType' => $offer->getContractType(),
+                'description' => $offer->getDescription(),
+                'url' => $offer->getUrl(),
+                'publicationDate' => $offer->getPublicationDate()->format('Y-m-d'),
+                'expirationDate' => $offer->getExpirationDate()?->format('Y-m-d'),
+            ] : null,
         ], 201);
     }
 
