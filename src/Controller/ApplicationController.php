@@ -13,9 +13,6 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
-use App\Entity\Offer;
-use App\Entity\Status;
-use App\Entity\StatusApplication;
 
 class ApplicationController extends AbstractController
 {
@@ -72,7 +69,7 @@ class ApplicationController extends AbstractController
         // L'offre est facultative : si elle est fournie, on la valide.
         $offer = null;
 
-        if (array_key_exists('offer', $data)) {
+        if (!empty($data['offer'])) {
             $offerData = $data['offer'];
 
             if (
@@ -92,83 +89,84 @@ class ApplicationController extends AbstractController
                     'error' => 'L’intitulé, la description et la date de publication de l’offre sont obligatoires.',
                 ], 422);
             }
-        }
-        $publicationDateString = $offerData['publicationDate'];
-        $publicationDate = \DateTime::createFromFormat(
-            '!Y-m-d',
-            $publicationDateString
-        );
-        $dateErrors = \DateTime::getLastErrors();
 
-        if (
-            !$publicationDate
-            || $publicationDate->format('Y-m-d') !== $publicationDateString
-            || ($dateErrors !== false && (
-                $dateErrors['warning_count'] > 0
-                || $dateErrors['error_count'] > 0
-            ))
-        ) {
-            return new JsonResponse([
-                'error' => 'La date de publication est invalide.',
-            ], 422);
-        }
-
-        $expirationDate = null;
-
-        if (
-            isset($offerData['expirationDate'])
-            && $offerData['expirationDate'] !== ''
-            && $offerData['expirationDate'] !== null
-        ) {
-            if (!is_string($offerData['expirationDate'])) {
-                return new JsonResponse([
-                    'error' => 'La date d’expiration est invalide.',
-                ], 422);
-            }
-
-            $expirationDateString = $offerData['expirationDate'];
-            $expirationDate = \DateTime::createFromFormat(
+            $publicationDateString = $offerData['publicationDate'];
+            $publicationDate = \DateTime::createFromFormat(
                 '!Y-m-d',
-                $expirationDateString
+                $publicationDateString
             );
             $dateErrors = \DateTime::getLastErrors();
 
             if (
-                !$expirationDate
-                || $expirationDate->format('Y-m-d') !== $expirationDateString
+                !$publicationDate
+                || $publicationDate->format('Y-m-d') !== $publicationDateString
                 || ($dateErrors !== false && (
                     $dateErrors['warning_count'] > 0
                     || $dateErrors['error_count'] > 0
                 ))
             ) {
                 return new JsonResponse([
-                    'error' => 'La date d’expiration est invalide.',
+                    'error' => 'La date de publication est invalide.',
                 ], 422);
             }
 
-            if ($expirationDate < $publicationDate) {
-                return new JsonResponse([
-                    'error' => 'La date d’expiration doit être postérieure ou égale à la date de publication.',
-                ], 422);
+            $expirationDate = null;
+
+            if (
+                isset($offerData['expirationDate'])
+                && $offerData['expirationDate'] !== ''
+                && $offerData['expirationDate'] !== null
+            ) {
+                if (!is_string($offerData['expirationDate'])) {
+                    return new JsonResponse([
+                        'error' => 'La date d’expiration est invalide.',
+                    ], 422);
+                }
+
+                $expirationDateString = $offerData['expirationDate'];
+                $expirationDate = \DateTime::createFromFormat(
+                    '!Y-m-d',
+                    $expirationDateString
+                );
+                $dateErrors = \DateTime::getLastErrors();
+
+                if (
+                    !$expirationDate
+                    || $expirationDate->format('Y-m-d') !== $expirationDateString
+                    || ($dateErrors !== false && (
+                        $dateErrors['warning_count'] > 0
+                        || $dateErrors['error_count'] > 0
+                    ))
+                ) {
+                    return new JsonResponse([
+                        'error' => 'La date d’expiration est invalide.',
+                    ], 422);
+                }
+
+                if ($expirationDate < $publicationDate) {
+                    return new JsonResponse([
+                        'error' => 'La date d’expiration doit être postérieure ou égale à la date de publication.',
+                    ], 422);
+                }
             }
+
+            $offer = new Offer();
+            $offer->setJobTitle(trim($offerData['jobTitle']));
+            $offer->setDescription(trim($offerData['description']));
+            $offer->setContractType(
+                isset($offerData['contractType']) && $offerData['contractType'] !== ''
+                ? trim((string) $offerData['contractType'])
+                : null
+            );
+            $offer->setPublicationDate($publicationDate);
+            $offer->setExpirationDate($expirationDate);
+            $offer->setUrl(
+                isset($offerData['url']) && trim((string) $offerData['url']) !== ''
+                ? trim((string) $offerData['url'])
+                : null
+            );
+            $offer->setCompany($company);
         }
-
-        $offer = new Offer();
-        $offer->setJobTitle(trim($offerData['jobTitle']));
-        $offer->setDescription(trim($offerData['description']));
-        $offer->setContractType(
-            isset($offerData['contractType']) && $offerData['contractType'] !== ''
-            ? trim((string) $offerData['contractType'])
-            : null
-        );
-        $offer->setPublicationDate($publicationDate);
-        $offer->setExpirationDate($expirationDate);
-        $offer->setUrl(
-            isset($offerData['url']) && trim((string) $offerData['url']) !== ''
-            ? trim((string) $offerData['url'])
-            : null
-        );
-        $offer->setCompany($company);
 
 
         // La méthode de candidature est optionnelle
