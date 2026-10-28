@@ -25,16 +25,27 @@ class ApplicationController extends AbstractController
             ], 422);
         }
 
+
         // Vérification du format de la date
-        $applyDate = \DateTime::createFromFormat('Y-m-d', $data['applyDate']);
-        if (!$applyDate) {
+        $applyDateString = $data['applyDate'] ?? '';
+
+        $applyDate = \DateTime::createFromFormat(
+            '!Y-m-d',
+            $applyDateString
+        );
+
+        $today = new \DateTime('today');
+
+        if (
+            !$applyDate ||
+            $applyDate->format('Y-m-d') !== $applyDateString
+        ) {
             return new JsonResponse([
                 'error' => 'Le format de applyDate est invalide (attendu : YYYY-MM-DD).',
             ], 422);
         }
 
         // La date de candidature doit être antérieure ou égale à aujourd'hui
-        $today = new \DateTime('today');
         if ($applyDate > $today) {
             return new JsonResponse([
                 'error' => 'La date de candidature ne peut pas être dans le futur.',
@@ -42,12 +53,16 @@ class ApplicationController extends AbstractController
         }
 
         // Vérification que l'entreprise existe
-        $company = $entityManager->getRepository(Company::class)->find($data['companyId']);
+        $company = $entityManager
+            ->getRepository(Company::class)
+            ->find($data['companyId']);
+
         if (!$company) {
             return new JsonResponse([
                 'error' => 'Entreprise introuvable.',
             ], 422);
         }
+
 
         // La méthode de candidature est optionnelle
         $applicationMethod = null;

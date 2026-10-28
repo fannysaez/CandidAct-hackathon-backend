@@ -7,6 +7,7 @@ use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Doctrine\Orm\Filter\FreeTextQueryFilter;
 use ApiPlatform\Doctrine\Orm\Filter\OrFilter;
 use ApiPlatform\Doctrine\Orm\Filter\PartialSearchFilter;
+use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\QueryParameter;
 use App\Repository\ApplicationRepository;
 use Doctrine\Common\Collections\ArrayCollection;
