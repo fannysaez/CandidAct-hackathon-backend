@@ -16,7 +16,7 @@ class ApplicationRepository extends ServiceEntityRepository
         parent::__construct($registry, Application::class);
     }
 
-//    /**
+    //    /**
 //     * @return Application[] Returns an array of Application objects
 //     */
 //    public function findByExampleField($value): array
@@ -31,7 +31,7 @@ class ApplicationRepository extends ServiceEntityRepository
 //        ;
 //    }
 
-//    public function findOneBySomeField($value): ?Application
+    //    public function findOneBySomeField($value): ?Application
 //    {
 //        return $this->createQueryBuilder('a')
 //            ->andWhere('a.exampleField = :val')

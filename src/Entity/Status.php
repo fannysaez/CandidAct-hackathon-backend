@@ -2,20 +2,33 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
 use App\Repository\StatusRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: StatusRepository::class)]
+#[ApiResource(
+    operations: [
+        new GetCollection(security: "is_granted('IS_AUTHENTICATED_FULLY')"),
+        new Get(security: "is_granted('IS_AUTHENTICATED_FULLY')"),
+    ],
+    normalizationContext: ['groups' => ['status:read']],
+)]
 class Status
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['status:read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(['status:read'])]
     private ?string $label = null;
 
     /**
@@ -26,7 +39,6 @@ class Status
 
     public function __construct()
     {
-        $this->application = new ArrayCollection();
         $this->statusApplications = new ArrayCollection();
     }
 
@@ -43,30 +55,6 @@ class Status
     public function setLabel(string $label): static
     {
         $this->label = $label;
-
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, Application>
-     */
-    public function getApplication(): Collection
-    {
-        return $this->application;
-    }
-
-    public function addApplication(Application $application): static
-    {
-        if (!$this->application->contains($application)) {
-            $this->application->add($application);
-        }
-
-        return $this;
-    }
-
-    public function removeApplication(Application $application): static
-    {
-        $this->application->removeElement($application);
 
         return $this;
     }

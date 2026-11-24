@@ -2,27 +2,63 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Doctrine\Orm\Filter\FreeTextQueryFilter;
+use ApiPlatform\Doctrine\Orm\Filter\OrFilter;
+use ApiPlatform\Doctrine\Orm\Filter\PartialSearchFilter;
+use ApiPlatform\Metadata\Post;
+use ApiPlatform\Metadata\QueryParameter;
 use App\Repository\ApplicationRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Attribute\Groups;
+use Symfony\Component\Serializer\Attribute\SerializedName;
+use ApiPlatform\Metadata\NotExposed;
 
 #[ORM\Entity(repositoryClass: ApplicationRepository::class)]
+#[ApiResource(
+    operations: [
+        new GetCollection(
+            uriTemplate: '/applications',
+            normalizationContext: ['groups' => ['application:list']],
+            order: ['applyDate' => 'DESC', 'id' => 'DESC'],
+            paginationEnabled: false,
+        ),
+        new NotExposed(uriTemplate: '/application-items/{id}'),
+    ],
+    normalizationContext: ['groups' => ['application:read']],
+    parameters: [
+        'search' => new QueryParameter(
+            filter: new FreeTextQueryFilter(
+                new OrFilter(
+                    new PartialSearchFilter()
+                )
+            ),
+            properties: ['offer.jobTitle', 'company.name'],
+            description: 'Recherche sur le nom de l’entreprise ou du poste'
+        ),
+    ])]
 class Application
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['application:read', 'application:list'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(['application:read'])]
     private ?string $label = null;
 
     #[ORM\Column]
+    #[Groups(['application:read', 'application:list'])]
     private ?\DateTime $applyDate = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Groups(['application:read'])]
     private ?string $description = null;
 
     #[ORM\ManyToOne(inversedBy: 'applications')]
@@ -31,24 +67,23 @@ class Application
 
     #[ORM\ManyToOne(inversedBy: 'applications')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['application:read'])]
     private ?Company $company = null;
 
     #[ORM\OneToOne(cascade: ['persist', 'remove'])]
+    #[Groups(['application:read'])]
     private ?Offer $offer = null;
 
     #[ORM\ManyToOne(inversedBy: 'applications')]
+    #[Groups(['application:read'])]
     private ?ApplicationMethod $applicationMethod = null;
 
-    /**
-     * @var Collection<int, Reminder>
-     */
     #[ORM\OneToMany(targetEntity: Reminder::class, mappedBy: 'application')]
+    #[Groups(['application:read'])]
     private Collection $reminders;
 
-    /**
-     * @var Collection<int, StatusApplication>
-     */
     #[ORM\OneToMany(targetEntity: StatusApplication::class, mappedBy: 'application')]
+    #[Groups(['application:read'])]
     private Collection $applicationsStatus;
 
     public function __construct()
@@ -146,9 +181,6 @@ class Application
         return $this;
     }
 
-    /**
-     * @return Collection<int, Reminder>
-     */
     public function getReminders(): Collection
     {
         return $this->reminders;
@@ -167,7 +199,6 @@ class Application
     public function removeReminder(Reminder $reminder): static
     {
         if ($this->reminders->removeElement($reminder)) {
-            // set the owning side to null (unless already changed)
             if ($reminder->getApplication() === $this) {
                 $reminder->setApplication(null);
             }
@@ -176,36 +207,6 @@ class Application
         return $this;
     }
 
-    /**
-     * @return Collection<int, Status>
-     */
-    public function getStatuses(): Collection
-    {
-        return $this->statuses;
-    }
-
-    public function addStatus(Status $status): static
-    {
-        if (!$this->statuses->contains($status)) {
-            $this->statuses->add($status);
-            $status->addApplication($this);
-        }
-
-        return $this;
-    }
-
-    public function removeStatus(Status $status): static
-    {
-        if ($this->statuses->removeElement($status)) {
-            $status->removeApplication($this);
-        }
-
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, StatusApplication>
-     */
     public function getApplicationsStatus(): Collection
     {
         return $this->applicationsStatus;
@@ -224,7 +225,6 @@ class Application
     public function removeApplicationsStatus(StatusApplication $applicationsStatus): static
     {
         if ($this->applicationsStatus->removeElement($applicationsStatus)) {
-            // set the owning side to null (unless already changed)
             if ($applicationsStatus->getApplication() === $this) {
                 $applicationsStatus->setApplication(null);
             }
@@ -233,4 +233,31 @@ class Application
         return $this;
     }
 
+    #[Groups(['application:list'])]
+    #[SerializedName('company')]
+    public function getCompanyName(): ?string
+    {
+        return $this->company?->getName();
+    }
+
+    #[Groups(['application:list'])]
+    #[SerializedName('jobTitle')]
+    public function getJobTitle(): ?string
+    {
+        return $this->offer?->getJobTitle() ?? $this->label;
+    }
+
+    #[Groups(['application:list'])]
+    #[SerializedName('status')]
+    public function getCurrentStatus(): ?string
+    {
+        $latest = null;
+        foreach ($this->applicationsStatus as $statusApplication) {
+            if ($latest === null || $statusApplication->getUpdateDate() > $latest->getUpdateDate()) {
+                $latest = $statusApplication;
+            }
+        }
+
+        return $latest?->getStatus()?->getLabel();
+    }
 }
